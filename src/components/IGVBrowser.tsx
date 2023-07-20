@@ -18,7 +18,10 @@ import {
   removeTrackById,
   removeAndLoadTracks,
   createLocusString,
-  selectTracksFromURLParams
+  selectTracksFromURLParams,
+  removeAndLoadROIs,
+  parseURLROI,
+  convertStringToTrackNames
 } from "@utils/index";
 import { decodeBedXY } from "@decoders/bedDecoder";
 import LoadSession from "./LoadSession";
@@ -63,7 +66,12 @@ const IGVBrowser: React.FC<IGVBrowserProps> = ({
       let value = url.searchParams.get(param)
       if(value) params[param] = value
     }
-    setURLParamsState(params)
+    if(params.hasOwnProperty('tracks')){
+      params.tracks = convertStringToTrackNames(params.tracks)
+    }
+    if(Object.keys(params).length !== 0){
+      setURLParamsState(params)
+    }
   }, [])
 
   useEffect(() => {
@@ -104,21 +112,23 @@ const IGVBrowser: React.FC<IGVBrowserProps> = ({
       }
       //assuming session takes precedence over URL params
       else if(URLParamsState) {
+        let updatedSession: Session = createSessionObj([])
         if(URLParamsState.hasOwnProperty('tracks')) {
-          sessionJSON.tracks = selectTracksFromURLParams(tracks, URLParamsState.tracks)
-          removeAndLoadTracks(sessionJSON.tracks, browser)
-          setSessionJSON(sessionJSON)
+          let urlTracks  = selectTracksFromURLParams(tracks, URLParamsState.tracks)
+          removeAndLoadTracks(urlTracks, browser)
+          updatedSession.tracks = urlTracks
         }
-        if(URLParamsState.hasOwnProperty('locus')){
-          sessionJSON.locus = URLParamsState.locus
-          browser.search(sessionJSON.locus)
-          setSessionJSON(sessionJSON)
+        if(URLParamsState.hasOwnProperty('locus')) {
+          browser.search(URLParamsState.locus)
+          updatedSession.locus = URLParamsState.locus
         }
-        if(URLParamsState.hasOwnProperty('roi')){
-          sessionJSON.roi = URLParamsState.roi
-          
-          removeAndLoadROIs(sessionJSON.roi)
+        if(URLParamsState.hasOwnProperty('roi')) {
+          let ROIs: ROISet[] = [{features: parseURLROI(URLParamsState.roi)}]
+          //assuming the roi is in the format of chr:start-end,chr:start=end...
+          removeAndLoadROIs(ROIs, browser)
+          updatedSession.roi = ROIs
         }
+        setSessionJSON(updatedSession)
 
       }
       else {
@@ -149,11 +159,6 @@ const IGVBrowser: React.FC<IGVBrowserProps> = ({
     return () => clearInterval(intervalId);
   }, [browserIsLoaded, browser]);
 
-  const removeAndLoadROIs = (ROIs: ROISet[], browser: any) => {
-    console.log("ROIs: ", ROIs)
-    browser.clearROIs()
-    browser.loadROI(ROIs)
-  }
   useLayoutEffect(() => {
     window.addEventListener("ERROR: Genome Browser - ", (event) => {
       console.log(event);

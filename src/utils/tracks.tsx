@@ -2,7 +2,7 @@ import get from "lodash.get";
 import { ALWAYS_ON_TRACKS } from "@data/_constants";
 import VariantServiceReader  from "@readers/VariantServiceReader"
 import GWASServiceReader from "@readers/GWASServiceReader"
-import { Session, TrackBaseOptions } from "@browser-types/tracks";
+import { Session, TrackBaseOptions, ROISet, ROIFeature } from "@browser-types/tracks";
 import { loadTracks } from "./browser";
 
 export const getTrackID = (trackView: any) => {
@@ -65,10 +65,44 @@ export const onTrackRemoved = (id: string, setSessionJSON: any) => {
 
 export const selectTracksFromURLParams = (availableTracks: TrackBaseOptions[], URLTracks: string[]): TrackBaseOptions[] => {
     const selectedTracks = []
-    for(let trackName in URLTracks) {
+    for(let trackName of URLTracks) {
         for(let track of availableTracks){
             if(track.name === trackName) selectedTracks.push(track)
         }
     }
     return selectedTracks
+}
+
+export const convertStringToTrackNames = (trackString: string): string[] => {
+    let tracks = trackString.split(',')
+    return tracks
+}
+
+export const removeAndLoadROIs = (ROIs: ROISet[], browser: any) => {
+    browser.clearROIs()
+    browser.loadROI(ROIs)
+  }
+
+export const parseURLROI = (stringROIs: string): ROIFeature[] => {
+    const rois = stringROIs.split(',');
+
+    return rois.map(roi => {
+      const [chr, range] = roi.trim().split(':');
+  
+      if (range) {
+        const [startStr, endStr] = range.split('-');
+        const start = parseFloat(startStr);
+        const end = parseFloat(endStr);
+  
+        if (!isNaN(start) && !isNaN(end)) {
+          return {
+            chr,
+            start,
+            end
+          };
+        }
+      }
+  
+      return null;
+    });   
 }

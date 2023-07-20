@@ -62,3 +62,13 @@ export const onTrackRemoved = (id: string, setSessionJSON: any) => {
     })
     
 }
+
+export const selectTracksFromURLParams = (availableTracks: TrackBaseOptions[], URLTracks: string[]): TrackBaseOptions[] => {
+    const selectedTracks = []
+    for(let trackName in URLTracks) {
+        for(let track of availableTracks){
+            if(track.name === trackName) selectedTracks.push(track)
+        }
+    }
+    return selectedTracks
+}

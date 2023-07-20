@@ -17,7 +17,8 @@ import {
   getLoadedTracks,
   removeTrackById,
   removeAndLoadTracks,
-  createLocusString
+  createLocusString,
+  selectTracksFromURLParams
 } from "@utils/index";
 import { decodeBedXY } from "@decoders/bedDecoder";
 import LoadSession from "./LoadSession";
@@ -101,12 +102,31 @@ const IGVBrowser: React.FC<IGVBrowserProps> = ({
         if(sessionJSON.hasOwnProperty("roi")) removeAndLoadROIs(sessionJSON.roi, browser);
         if(sessionJSON.hasOwnProperty("locus")) browser.search(sessionJSON.locus)
       }
+      //assuming session takes precedence over URL params
+      else if(URLParamsState) {
+        if(URLParamsState.hasOwnProperty('tracks')) {
+          sessionJSON.tracks = selectTracksFromURLParams(tracks, URLParamsState.tracks)
+          removeAndLoadTracks(sessionJSON.tracks, browser)
+          setSessionJSON(sessionJSON)
+        }
+        if(URLParamsState.hasOwnProperty('locus')){
+          sessionJSON.locus = URLParamsState.locus
+          browser.search(sessionJSON.locus)
+          setSessionJSON(sessionJSON)
+        }
+        if(URLParamsState.hasOwnProperty('roi')){
+          sessionJSON.roi = URLParamsState.roi
+          
+          removeAndLoadROIs(sessionJSON.roi)
+        }
+
+      }
       else {
         removeAndLoadTracks(tracks, browser);
         setSessionJSON(createSessionObj(tracks));
       }
     }
-  }, [browserIsLoaded, memoOptions, tracks]);
+  }, [browserIsLoaded, memoOptions, tracks, URLParamsState]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {

@@ -27,6 +27,7 @@ import AddTracksButton from "./AddTracksButton";
 import { ReferenceFrame } from "@browser-types/browserObjects";
 
 export const DEFAULT_FLANK = 1000;
+export const URL_PARAMETER_NAMES = ["tracks", "locus", "roi"]
 
 interface IGVBrowserProps {
   featureSearchUrl: string;
@@ -50,7 +51,24 @@ const IGVBrowser: React.FC<IGVBrowserProps> = ({
   const [browserIsLoaded, setBrowserIsLoaded] = useState<boolean>(false);
   const [browser, setBrowser] = useState<any>(null);
   const [sessionJSON, setSessionJSON] = useSessionStorage<Session>('sessionJSON', null)
+  const [URLParamsState, setURLParamsState] = useState(null)
   const isDragging = useRef<boolean>(false)
+
+  useEffect(() => {
+    //get URL parameters
+    const url = new URL(window.location.href)
+    const params: any = {}
+    for(let param of URL_PARAMETER_NAMES){
+      let value = url.searchParams.get(param)
+      if(value) params[param] = value
+    }
+    setURLParamsState(params)
+  }, [])
+
+  useEffect(() => {
+    if(URLParamsState) console.log(URLParamsState)
+  }, [URLParamsState])
+  
   
   const memoOptions: any = useMemo(() => {
     const referenceTrackConfig: any = find(_genomes, { id: genome });
